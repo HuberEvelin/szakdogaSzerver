@@ -14,6 +14,17 @@ router.get('/:id', auth.authenticateToken, (req, res) => {
     });
 });
 
+router.delete('/:id', auth.authenticateToken, (req, res) => {
+    const id = req.params.id;
+
+    con.query('DELETE FROM megjegyzesek WHERE id = ?', [id], function (err, results) {
+        if (err) {
+            return res.status(500).json({ error: 'Hiba történt a megjegyzés törlése közben.' });
+        }
+        return res.status(200);
+    });
+});
+
 router.post('/', auth.authenticateToken, (req, res) => {
     const { lako_id, szoveg, bejegyzo_id } = req.body;
 

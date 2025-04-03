@@ -12,6 +12,15 @@ router.get('/', auth.authenticateToken, (req, res) => {
     });
 });
 
+router.get('/foglalkozasok', auth.authenticateToken, (req, res) => {
+    con.query('SELECT * FROM esemenyek where foglalkozas = 1', function (err, results) {
+        if (err) {
+            return res.status(500).json({ error: 'Hiba történt a foglalkozások lekérdezése közben.' });
+        }
+        return res.json(results);
+    });
+});
+
 router.post('/', auth.authenticateToken, (req, res) => {
     const { nev, szoveg, bejegyzo_id, datum_kezdet, datum_veg, foglalkozas, szin } = req.body;
 
