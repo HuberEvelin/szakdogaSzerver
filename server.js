@@ -12,7 +12,7 @@ dotenv.config();
 const app = express();
 
 var accessLogStream = fs.createWriteStream(path.join(__dirname, 'access.log'), { flags: 'a' })
-app.use(morgan('combined', { stream: accessLogStream }));
+app.use(morgan('tiny', { stream: accessLogStream }));
 
 app.use(express.json());
 app.use(session({

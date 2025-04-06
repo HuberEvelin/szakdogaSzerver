@@ -23,32 +23,26 @@ router.get('/foglalkozasok', auth.authenticateToken, (req, res) => {
 
 router.post('/', auth.authenticateToken, (req, res) => {
     const { nev, szoveg, bejegyzo_id, datum_kezdet, datum_veg, foglalkozas, szin } = req.body;
-
-    // Ellenőrzés a kötelező paraméterekre
     if (!nev || !datum_kezdet || !datum_veg || !bejegyzo_id) {
         return res.status(400).json({ error: 'Hiányzó vagy érvénytelen paraméterek.' });
     }
 
-    // Dátumok konvertálása, ha szükséges
     let formattedStartDate, formattedEndDate;
 
     try {
-        const startDate = new Date(datum_kezdet); // Konvertálás Date objektummá
-        const endDate = new Date(datum_veg); // Konvertálás Date objektummá
+        const startDate = new Date(datum_kezdet);
+        const endDate = new Date(datum_veg);
 
-        // Ellenőrzés, hogy érvényes dátumok lettek-e létrehozva
         if (isNaN(startDate) || isNaN(endDate)) {
             return res.status(400).json({ error: 'Érvénytelen dátumformátum.' });
         }
 
-        // Formázott dátumok létrehozása
         formattedStartDate = startDate.toISOString().slice(0, 19).replace('T', ' ');
         formattedEndDate = endDate.toISOString().slice(0, 19).replace('T', ' ');
     } catch (err) {
         return res.status(400).json({ error: 'Hiba a dátumok feldolgozása közben.' });
     }
 
-    // SQL lekérdezés és értékek
     const query = 'INSERT INTO esemenyek (nev, szoveg, bejegyzo_id, datum_kezdet, datum_veg, foglalkozas, szin) VALUES (?, ?, ?, ?, ?, ?, ?)';
     const values = [nev, szoveg, bejegyzo_id, formattedStartDate, formattedEndDate, foglalkozas, szin];
 
