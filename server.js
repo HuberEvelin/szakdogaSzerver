@@ -50,6 +50,8 @@ app.use('/lakok', require('./routes/residents'));
 app.use('/uzenofal', require('./routes/messages'));
 app.use('/megjegyzesek', require('./routes/comments'));
 
+app.use('/vendeg', require('./routes/guest'));
+
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).send({ error: 'Valami hiba történt a szerveren.' });
