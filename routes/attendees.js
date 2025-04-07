@@ -3,7 +3,6 @@ const con = require('../lib/db');
 const auth = require('../tools/auth');
 const router = express.Router();
 
-
 router.get('/:id', auth.authenticateToken, (req, res) => {
     const id = req.params.id;
 

@@ -34,6 +34,7 @@ app.use(cors({
 }));
 
 app.use('/user', userRoutes);
+app.use('/dolgozok', require('./routes/workers'));
 
 app.use('/esemenyek', require('./routes/events'));
 app.use('/resztvevok', require('./routes/attendees'));
