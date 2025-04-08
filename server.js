@@ -33,6 +33,10 @@ app.use(cors({
     credentials: true
 }));
 
+const checkGuestCode = require('./tools/guestCodeChecker');
+app.use(checkGuestCode);
+
+
 app.use('/user', userRoutes);
 app.use('/dolgozok', require('./routes/workers'));
 

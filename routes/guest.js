@@ -3,8 +3,7 @@ const con = require('../lib/db');
 const auth = require('../tools/auth');
 const router = express.Router();
 
-//Lakó összes adata, kassza összes adata, minden tranzakciós adat az adott kasszához, és a lakó kommentjei is
-router.get('/', (req, res) => {
+router.post('/check', (req, res) => {
     const { kod } = req.body;
 
     if (!kod) {
@@ -47,7 +46,56 @@ router.get('/', (req, res) => {
                 return res.status(400).json({ error: 'A kód lejárt, és eltávolításra került.' });
             });
         } else {
-            if (!lakokData.kassza_id || lakokData.kassza_id === -1) {
+            return res.status(200).json({ message: 'A kód érvényes és nincs lejárva.' });
+        }
+    });
+});
+
+
+router.post('/', (req, res) => {
+    const { kod } = req.body;
+
+    if (!kod) {
+        return res.status(400).json({ error: 'A kód nem lett megadva.' });
+    }
+
+    const checkCodeQuery = `
+        SELECT * 
+        FROM lakok 
+        WHERE vendegkod = ?
+    `;
+
+    con.query(checkCodeQuery, [kod], (err, lakokResults) => {
+        if (err) {
+            return res.status(500).json({ error: 'Hiba történt az adatbázis lekérdezése közben.' });
+        }
+
+        if (lakokResults.length === 0) {
+            return res.status(404).json({ error: 'A megadott kód nem létezik.' });
+        }
+
+        const lakoData = lakokResults[0];
+        const kodDatum = new Date(lakoData.kod_datum);
+        const now = new Date();
+
+        const hoursDifference = (now - kodDatum) / (1000 * 60 * 60);
+
+        if (hoursDifference > 72) {
+            const updateQuery = `
+                UPDATE lakok 
+                SET vendegkod = NULL, kod_datum = NULL 
+                WHERE vendegkod = ?
+            `;
+
+            con.query(updateQuery, [kod], (updateErr) => {
+                if (updateErr) {
+                    return res.status(500).json({ error: 'Hiba történt az adatbázis frissítése közben.' });
+                }
+
+                return res.status(400).json({ error: 'A kód lejárt, és eltávolításra került.' });
+            });
+        } else {
+            if (!lakoData.kassza_id || lakoData.kassza_id === -1) {
                 return res.status(400).json({ error: 'Érvénytelen kassza_id érték.' });
             }
 
@@ -57,12 +105,12 @@ router.get('/', (req, res) => {
                 WHERE id = ?
             `;
 
-            con.query(kasszakQuery, [lakokData.kassza_id], (kasszakErr, kasszakResults) => {
-                if (kasszakErr) {
+            con.query(kasszakQuery, [lakoData.kassza_id], (kasszaErr, kasszaResults) => {
+                if (kasszaErr) {
                     return res.status(500).json({ error: 'Hiba történt a kasszak lekérdezése közben.' });
                 }
 
-                const kasszakData = kasszakResults[0];
+                const kasszaData = kasszaResults[0];
 
                 const penzmozgasokQuery = `
                     SELECT * 
@@ -70,27 +118,43 @@ router.get('/', (req, res) => {
                     WHERE kassza_id = ?
                 `;
 
-                con.query(penzmozgasokQuery, [lakokData.kassza_id], (penzErr, penzResults) => {
+                con.query(penzmozgasokQuery, [lakoData.kassza_id], (penzErr, penzResults) => {
                     if (penzErr) {
                         return res.status(500).json({ error: 'Hiba történt a penzmozgasok lekérdezése közben.' });
                     }
 
-                    const kommentekQuery = `
-                        SELECT * 
-                        FROM megjegyzesek 
-                        WHERE lako_id = ?
+                    const szobakQuery = `
+                        SELECT szobak.szobaszam, reszlegek.nev AS reszleg_nev
+                        FROM szobak
+                        JOIN reszlegek ON szobak.reszleg_id = reszlegek.id
+                        WHERE szobak.id = ?
                     `;
 
-                    con.query(kommentekQuery, [lakokData.id], (kommentErr, kommentResults) => {
-                        if (kommentErr) {
-                            return res.status(500).json({ error: 'Hiba történt a kommentek lekérdezése közben.' });
+                    con.query(szobakQuery, [lakoData.szoba_id], (szobaErr, szobaResults) => {
+                        if (szobaErr) {
+                            return res.status(500).json({ error: 'Hiba történt a szoba és részleg adatainak lekérdezése közben.' });
                         }
 
-                        return res.status(200).json({
-                            lakok: lakokData,
-                            kasszak: kasszakData,
-                            penzmozgasok: penzResults,
-                            kommentek: kommentResults
+                        const szobaData = szobaResults[0];
+
+                        const kommentekQuery = `
+                            SELECT * 
+                            FROM megjegyzesek 
+                            WHERE lako_id = ?
+                        `;
+
+                        con.query(kommentekQuery, [lakoData.id], (kommentErr, kommentResults) => {
+                            if (kommentErr) {
+                                return res.status(500).json({ error: 'Hiba történt a kommentek lekérdezése közben.' });
+                            }
+
+                            return res.status(200).json({
+                                lako: lakoData,
+                                kassza: kasszaData,
+                                penzmozgasok: penzResults,
+                                kommentek: kommentResults,
+                                szoba: szobaData 
+                            });
                         });
                     });
                 });
@@ -98,6 +162,7 @@ router.get('/', (req, res) => {
         }
     });
 });
+
 
 router.post('/:id', auth.authenticateToken, (req, res) => {
     const id = req.params.id;
@@ -107,7 +172,7 @@ router.post('/:id', auth.authenticateToken, (req, res) => {
     }
 
     function generateCode(length = 10) {
-        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         let code = '';
         for (let i = 0; i < length; i++) {
             const randomIndex = Math.floor(Math.random() * characters.length);
@@ -142,6 +207,7 @@ router.post('/:id', auth.authenticateToken, (req, res) => {
     });
 });
 
+module.exports = router;
 
 
 
