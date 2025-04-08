@@ -80,28 +80,28 @@ router.put('/:id', auth.authenticateToken, (req, res) => {
 
 router.post('/', auth.authenticateToken, (req, res) => {
     const { nev, szoba_id = -1, szuletesi_ido, kassza_id = -1, nevnap = null } = req.body;
+
     if (!nev || !szuletesi_ido) {
         return res.status(400).json({ error: 'A név és születési idő megadása kötelező.' });
     }
 
-    const newResident = {
-        nev,
-        szuletesi_ido,
-        szoba_id,
-        kassza_id,
-        nevnap
-    };
-    console.log(newResident);
     const query = 'INSERT INTO lakok (nev, szuletesi_ido, szoba_id, kassza_id, nevnap) VALUES (?, ?, ?, ?, ?)';
     const values = [nev, szuletesi_ido, szoba_id, kassza_id, nevnap];
+
     con.query(query, values, (err, result) => {
         if (err) {
-            return res.status(500).json({ error: 'Hiba történt a lakó hozzáadása közben.' + err });
+            return res.status(500).json({ error: 'Hiba történt a lakó hozzáadása közben: ' + err });
         }
 
-        res.status(201).json(newResident);
+        const newResidentId = result.insertId;
+
+        res.status(201).json({
+            id: newResidentId,
+            message: 'Az új lakó sikeresen hozzáadva.',
+        });
     });
 });
+
 
 router.get('/szoba/:id', auth.authenticateToken, (req, res) => {
     const id = req.params.id;
