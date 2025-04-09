@@ -62,4 +62,4 @@ app.use((err, req, res, next) => {
     res.status(500).send({ error: 'Valami hiba történt a szerveren.' });
 });
 
-app.listen(3000, () => console.log('Server is on port 3000.'));
+app.listen(PORT, () => console.log('Server is on port 3000.'));
