@@ -9,7 +9,7 @@ const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 dotenv.config();
 
-const JWT_SECRET = 'your_jwt_secret';
+const JWT_SECRET = 'your_jwt_secret_kicsit_hosszabb';
 
 passport.serializeUser((user, done) => {
     done(null, user.id);
