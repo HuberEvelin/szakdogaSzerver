@@ -27,7 +27,7 @@ app.use(session({
     }
 }));
 app.use(passport.initialize());
-app.use(passport.session());
+app.use(passport.session({secret: 'titkoskod-nagyon-hosszu-es-biztonsagos'}));
 
 app.use(cors({
     origin: '*',
