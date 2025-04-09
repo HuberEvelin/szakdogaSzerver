@@ -30,10 +30,15 @@ app.use(passport.session({secret: 'titkoskod-nagyon-hosszu-es-biztonsagos'}));
 
 app.use(cors({
     origin: (origin, callback) => {
-        callback(null, true);
+        if (!origin || origin === 'null' || origin.startsWith('http://') || origin.startsWith('https://')) {
+            callback(null, true);
+        } else {
+            callback(new Error('Origin not allowed by CORS'));
+        }
     },
     credentials: true
 }));
+
 
 
 const checkGuestCode = require('./tools/guestCodeChecker');
