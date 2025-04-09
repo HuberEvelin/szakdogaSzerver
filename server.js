@@ -17,7 +17,7 @@ app.use(morgan('tiny', { stream: accessLogStream }));
 
 app.use(express.json());
 app.use(session({
-    secret: 'titkoskod',
+    secret: 'titkoskod-nagyon-hosszu-es-biztonsagos',
     resave: false,
     saveUninitialized: false,
     cookie: {
