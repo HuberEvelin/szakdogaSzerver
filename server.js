@@ -35,6 +35,8 @@ app.use(cors({
 }));
 
 const checkGuestCode = require('./tools/guestCodeChecker');
+app.use(checkGuestCode);
+
 
 app.use('/user', userRoutes);
 app.use('/dolgozok', require('./routes/workers'));
@@ -48,16 +50,16 @@ app.use('/penzmozgasok', require('./routes/transactions'));
 app.use('/szobak', require('./routes/rooms'));
 app.use('/reszlegek', require('./routes/sectors'));
 
-app.use('/lakok', checkGuestCode, require('./routes/residents'));
+app.use('/lakok', require('./routes/residents'));
 
 app.use('/uzenofal', require('./routes/messages'));
 app.use('/megjegyzesek', require('./routes/comments'));
 
-app.use('/vendeg', checkGuestCode, require('./routes/guest'));
+app.use('/vendeg', require('./routes/guest'));
 
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).send({ error: 'Valami hiba történt a szerveren.' });
 });
 
-app.listen(PORT, () => console.log('Server is on.'));
+app.listen(3000, () => console.log('Server is on port 3000.'));
