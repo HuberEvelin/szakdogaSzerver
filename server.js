@@ -10,7 +10,6 @@ var path = require('path');
 dotenv.config();
 
 const app = express();
-const PORT = 1433 || 8080;
 
 var accessLogStream = fs.createWriteStream(path.join(__dirname, 'access.log'), { flags: 'a' })
 app.use(morgan('tiny', { stream: accessLogStream }));
@@ -62,4 +61,4 @@ app.use((err, req, res, next) => {
     res.status(500).send({ error: 'Valami hiba történt a szerveren.' });
 });
 
-app.listen(PORT, () => console.log('Server is on port: ' + PORT));
+app.listen(8080, () => console.log('Server is on port: ' + 8080));
