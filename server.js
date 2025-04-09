@@ -29,9 +29,12 @@ app.use(passport.initialize());
 app.use(passport.session({secret: 'titkoskod-nagyon-hosszu-es-biztonsagos'}));
 
 app.use(cors({
-    origin: '*',
+    origin: (origin, callback) => {
+        callback(null, true);
+    },
     credentials: true
 }));
+
 
 const checkGuestCode = require('./tools/guestCodeChecker');
 app.use(checkGuestCode);
