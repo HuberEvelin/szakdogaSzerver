@@ -6,7 +6,7 @@ const con = require('../lib/db');
 router.get('/posztok', auth.authenticateToken, (req, res) => {
     con.query('SELECT * FROM uzenofal_posztok', function (err, results) {
         if (err) {
-            return res.status(500).json({ error: 'Hiba történt a posztok lekérdezése közben.' });
+            return res.status(500).json({ error: 'Hiba történt a posztok lekérdezése közben.' + err });
         }
         return res.json(results);
     });
