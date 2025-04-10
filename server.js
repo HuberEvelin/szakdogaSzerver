@@ -1,9 +1,9 @@
 const express = require('express');
 const session = require('express-session');
 const dotenv = require('dotenv');
-const cors = require('cors');
 const { router: userRoutes, passport } = require('./routes/user');
 const morgan = require('morgan');
+const cors = require('cors');
 var fs = require('fs');
 var path = require('path');
 
@@ -14,6 +14,19 @@ const app = express();
 var accessLogStream = fs.createWriteStream(path.join(__dirname, 'access.log'), { flags: 'a' })
 app.use(morgan('tiny', { stream: accessLogStream }));
 
+const corsOptions = {
+    origin: function (origin, callback) {
+        const allowedOrigins = ['https://localhost:8081']; 
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(session({
     secret: 'titkoskod-nagyon-hosszu-es-biztonsagos',
@@ -27,19 +40,6 @@ app.use(session({
 }));
 app.use(passport.initialize());
 app.use(passport.session({secret: 'titkoskod-nagyon-hosszu-es-biztonsagos'}));
-
-app.use(cors({
-    origin: (origin, callback) => {
-        if (!origin || origin === 'null' || origin.startsWith('http://') || origin.startsWith('https://')) {
-            callback(null, true);
-        } else {
-            callback(new Error('Origin not allowed by CORS'));
-        }
-    },
-    credentials: true
-}));
-
-
 
 const checkGuestCode = require('./tools/guestCodeChecker');
 app.use(checkGuestCode);
