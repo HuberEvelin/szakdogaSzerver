@@ -27,6 +27,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+
 app.use(express.json());
 app.use(session({
     secret: 'titkoskod-nagyon-hosszu-es-biztonsagos',
