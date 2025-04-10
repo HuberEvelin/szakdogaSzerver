@@ -16,7 +16,7 @@ app.use(morgan('tiny', { stream: accessLogStream }));
 
 const corsOptions = {
     origin: function (origin, callback) {
-        const allowedOrigins = ['https://localhost:8081']; 
+        const allowedOrigins = ['http://localhost:8081', 'https://localhost:8081']; 
         if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
@@ -27,6 +27,8 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+
 
 app.use(express.json());
 app.use(session({
