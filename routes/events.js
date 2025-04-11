@@ -61,8 +61,9 @@ router.post('/', auth.authenticateToken, async (req, res) => {
                 console.error('Hiba történt a poszt létrehozása közben:', err.message);
                 return res.status(500).json({ error: 'Hiba történt a poszt létrehozása közben.' });
             }
-    
+            console.log(results.insertId);
             posztId = results.insertId; 
+            console.log("poszt id: ", posztId)
         });
     }
     
