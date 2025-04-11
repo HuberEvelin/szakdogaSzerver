@@ -21,8 +21,8 @@ router.get('/foglalkozasok', auth.authenticateToken, (req, res) => {
     });
 });
 
-router.post('/', auth.authenticateToken, (req, res) => {
-    const { nev, szoveg, bejegyzo_id, datum_kezdet, datum_veg, foglalkozas, szin } = req.body;
+router.post('/', auth.authenticateToken, async (req, res) => {
+    const { nev, szoveg, bejegyzo_id, datum_kezdet, datum_veg, foglalkozas, szin, posztcim } = req.body;
     if (!nev || !datum_kezdet || !datum_veg || !bejegyzo_id) {
         return res.status(400).json({ error: 'Hiányzó vagy érvénytelen paraméterek.' });
     }
@@ -43,20 +43,37 @@ router.post('/', auth.authenticateToken, (req, res) => {
         return res.status(400).json({ error: 'Hiba a dátumok feldolgozása közben.' });
     }
 
-    const query = 'INSERT INTO esemenyek (nev, szoveg, bejegyzo_id, datum_kezdet, datum_veg, foglalkozas, szin) VALUES (?, ?, ?, ?, ?, ?, ?)';
-    const values = [nev, szoveg, bejegyzo_id, formattedStartDate, formattedEndDate, foglalkozas, szin];
+    let posztId = null;
 
-    con.query(query, values, (err, results) => {
+    if (posztcim) {
+        const posztQuery = 'INSERT INTO uzenofal_posztok (bejegyzo_id, cim, szoveg, datum) VALUES (?, ?, ?, ?)';
+        const posztValues = [bejegyzo_id, posztcim, szoveg, formattedStartDate];
+
+        try {
+            const [posztResult] = await con.promise().query(posztQuery, posztValues);
+            posztId = posztResult.insertId;
+        } catch (err) {
+            console.error('Hiba történt a poszt létrehozása közben:', err.message);
+            return res.status(500).json({ error: 'Hiba történt a poszt létrehozása közben.' });
+        }
+    }
+
+    const eventQuery = 'INSERT INTO esemenyek (nev, szoveg, bejegyzo_id, datum_kezdet, datum_veg, foglalkozas, szin, poszt_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+    const eventValues = [nev, szoveg, bejegyzo_id, formattedStartDate, formattedEndDate, foglalkozas, szin, posztId];
+
+    con.query(eventQuery, eventValues, (err, results) => {
         if (err) {
             console.error('Hiba történt az esemény létrehozása közben:', err.message);
             return res.status(500).json({ error: 'Hiba történt az esemény létrehozása közben.' });
         }
-        
+
         return res.status(201).json({
             message: 'Az esemény sikeresen létrehozva.',
+            poszt_id: posztId,
         });
     });
 });
+
 
 
 router.get('/:id', auth.authenticateToken, (req, res) => {
