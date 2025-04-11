@@ -46,19 +46,36 @@ router.post('/', auth.authenticateToken, async (req, res) => {
     let posztId = null;
 
     if (posztcim) {
+        if (!bejegyzo_id || !posztcim || !szoveg) {
+            console.error('Hiba: Hiányzó vagy érvénytelen paraméterek.');
+            return res.status(400).json({ error: 'Hiányzó vagy érvénytelen paraméterek.' });
+        }
+    
         const datum = new Date();
         const formattedDate = datum.toISOString().slice(0, 19).replace('T', ' ');
         const posztQuery = 'INSERT INTO uzenofal_posztok (bejegyzo_id, cim, szoveg, datum) VALUES (?, ?, ?, ?)';
         const posztValues = [bejegyzo_id, posztcim, szoveg, formattedDate];
+        console.log('bejegyzo_id:', bejegyzo_id);
+        console.log('posztcim:', posztcim);
+        console.log('szoveg:', szoveg);
 
+    
         try {
             const [posztResult] = await con.promise().query(posztQuery, posztValues);
             posztId = posztResult.insertId;
         } catch (err) {
             console.error('Hiba történt a poszt létrehozása közben:', err.message);
+    
+            if (err.code === 'ER_NO_SUCH_TABLE') {
+                console.error('Táblázat nem található.');
+            } else if (err.code === 'ER_BAD_FIELD_ERROR') {
+                console.error('Hibás mező név.');
+            }
+    
             return res.status(500).json({ error: 'Hiba történt a poszt létrehozása közben.' });
         }
     }
+    
 
     const eventQuery = 'INSERT INTO esemenyek (nev, szoveg, bejegyzo_id, datum_kezdet, datum_veg, foglalkozas, szin, poszt_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
     const eventValues = [nev, szoveg, bejegyzo_id, formattedStartDate, formattedEndDate, foglalkozas, szin, posztId];
