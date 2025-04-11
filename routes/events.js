@@ -24,7 +24,7 @@ router.get('/foglalkozasok', auth.authenticateToken, (req, res) => {
 router.post('/', auth.authenticateToken, async (req, res) => {
     const { nev, szoveg, bejegyzo_id, datum_kezdet, datum_veg, foglalkozas, szin, posztcim } = req.body;
     if (!nev || !datum_kezdet || !datum_veg || !bejegyzo_id) {
-        return res.status(400).json({ error: 'Hiányzó vagy érvénytelen paraméterek.' });
+        return res.status(400).json({ error: 'Hiányzó vagy érvénytelen paraméterek az eseményhez.' });
     }
 
     let formattedStartDate, formattedEndDate;
@@ -46,18 +46,19 @@ router.post('/', auth.authenticateToken, async (req, res) => {
     let posztId = null;
 
     if (posztcim) {
+        console.log('bejegyzo_id:', bejegyzo_id);
+        console.log('posztcim:', posztcim);
+        console.log('szoveg:', szoveg);
         if (!bejegyzo_id || !posztcim || !szoveg) {
-            console.error('Hiba: Hiányzó vagy érvénytelen paraméterek.');
-            return res.status(400).json({ error: 'Hiányzó vagy érvénytelen paraméterek.' });
+            console.error('Hiba: Hiányzó vagy érvénytelen paraméterek a poszthoz.');
+            return res.status(400).json({ error: 'Hiányzó vagy érvénytelen paraméterek a poszthoz.' });
         }
     
         const datum = new Date();
         const formattedDate = datum.toISOString().slice(0, 19).replace('T', ' ');
         const posztQuery = 'INSERT INTO uzenofal_posztok (bejegyzo_id, cim, szoveg, datum) VALUES (?, ?, ?, ?)';
         const posztValues = [bejegyzo_id, posztcim, szoveg, formattedDate];
-        console.log('bejegyzo_id:', bejegyzo_id);
-        console.log('posztcim:', posztcim);
-        console.log('szoveg:', szoveg);
+        
 
     
         try {
