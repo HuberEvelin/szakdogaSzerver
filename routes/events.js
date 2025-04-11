@@ -21,8 +21,9 @@ router.get('/foglalkozasok', auth.authenticateToken, (req, res) => {
     });
 });
 
-router.post('/', auth.authenticateToken, async (req, res) => {
+router.post('/', auth.authenticateToken, (req, res) => {
     const { nev, szoveg, bejegyzo_id, datum_kezdet, datum_veg, foglalkozas, szin, posztcim } = req.body;
+
     if (!nev || !datum_kezdet || !datum_veg || !bejegyzo_id) {
         return res.status(400).json({ error: 'Hiányzó vagy érvénytelen paraméterek az eseményhez.' });
     }
@@ -46,44 +47,51 @@ router.post('/', auth.authenticateToken, async (req, res) => {
     let posztId = null;
 
     if (posztcim) {
-        if (!bejegyzo_id || !posztcim) {
-            console.error('Hiba: Hiányzó vagy érvénytelen paraméterek.');
-            return res.status(400).json({ error: 'Hiányzó vagy érvénytelen paraméterek.' });
-        }
-    
         const datum = new Date();
         const formattedDate = datum.toISOString().slice(0, 19).replace('T', ' ');
         const posztQuery = 'INSERT INTO uzenofal_posztok (bejegyzo_id, cim, szoveg, datum) VALUES (?, ?, ?, ?)';
         const posztValues = [bejegyzo_id, posztcim, szoveg || null, formattedDate];
-    
+
         con.query(posztQuery, posztValues, (err, results) => {
             if (err) {
                 console.error('Hiba történt a poszt létrehozása közben:', err.message);
                 return res.status(500).json({ error: 'Hiba történt a poszt létrehozása közben.' });
             }
-            console.log(results.insertId);
-            posztId = results.insertId; 
-            console.log("poszt id: ", posztId)
+
+            posztId = results.insertId;
+
+            const eventQuery = 'INSERT INTO esemenyek (nev, szoveg, bejegyzo_id, datum_kezdet, datum_veg, foglalkozas, szin, poszt_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+            const eventValues = [nev, szoveg, bejegyzo_id, formattedStartDate, formattedEndDate, foglalkozas, szin, posztId];
+
+            con.query(eventQuery, eventValues, (err, results) => {
+                if (err) {
+                    console.error('Hiba történt az esemény létrehozása közben:', err.message);
+                    return res.status(500).json({ error: 'Hiba történt az esemény létrehozása közben.' });
+                }
+
+                return res.status(201).json({
+                    message: 'Az esemény és a poszt sikeresen létrehozva.',
+                    poszt_id: posztId,
+                });
+            });
+        });
+    } else {
+        const eventQuery = 'INSERT INTO esemenyek (nev, szoveg, bejegyzo_id, datum_kezdet, datum_veg, foglalkozas, szin, poszt_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+        const eventValues = [nev, szoveg, bejegyzo_id, formattedStartDate, formattedEndDate, foglalkozas, szin, null];
+
+        con.query(eventQuery, eventValues, (err, results) => {
+            if (err) {
+                console.error('Hiba történt az esemény létrehozása közben:', err.message);
+                return res.status(500).json({ error: 'Hiba történt az esemény létrehozása közben.' });
+            }
+
+            return res.status(201).json({
+                message: 'Az esemény sikeresen létrehozva.',
+            });
         });
     }
-    
-    
-
-    const eventQuery = 'INSERT INTO esemenyek (nev, szoveg, bejegyzo_id, datum_kezdet, datum_veg, foglalkozas, szin, poszt_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
-    const eventValues = [nev, szoveg, bejegyzo_id, formattedStartDate, formattedEndDate, foglalkozas, szin, posztId];
-
-    con.query(eventQuery, eventValues, (err, results) => {
-        if (err) {
-            console.error('Hiba történt az esemény létrehozása közben:', err.message);
-            return res.status(500).json({ error: 'Hiba történt az esemény létrehozása közben.' });
-        }
-
-        return res.status(201).json({
-            message: 'Az esemény sikeresen létrehozva.',
-            poszt_id: posztId,
-        });
-    });
 });
+
 
 
 
