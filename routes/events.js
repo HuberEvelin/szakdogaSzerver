@@ -76,16 +76,40 @@ router.get('/:id', auth.authenticateToken, (req, res) => {
 router.delete('/:id', auth.authenticateToken, (req, res) => {
     const id = req.params.id;
 
-    con.query('DELETE FROM esemenyek WHERE id = ?', [id], function (err, results) {
+    con.query('SELECT foglalkozas FROM esemenyek WHERE id = ?', [id], function (err, results) {
         if (err) {
-            return res.status(500).json({ error: 'Hiba történt az esemény törlése közben.' });
+            return res.status(500).json({ error: 'Hiba történt az esemény adatainak lekérdezésekor.' });
         }
         if (results.length === 0) {
             return res.status(404).json({ message: 'Az adott azonosítóval nem található esemény.' });
         }
-        return res.status(200).json({message: 'Esemény sikeresen törölve.'});
+
+        const foglalkozas = results[0].foglalkozas;
+
+        if (foglalkozas === 1) {
+            con.query('DELETE FROM resztvevok WHERE esemeny_id = ?', [id], function (err) {
+                if (err) {
+                    return res.status(500).json({ error: 'Hiba történt a résztvevők törlésekor.' });
+                }
+
+                con.query('DELETE FROM esemenyek WHERE id = ?', [id], function (err, results) {
+                    if (err) {
+                        return res.status(500).json({ error: 'Hiba történt az esemény törlése közben.' });
+                    }
+                    return res.status(200).json({ message: 'Az esemény és a résztvevők sikeresen törölve.' });
+                });
+            });
+        } else {
+            con.query('DELETE FROM esemenyek WHERE id = ?', [id], function (err, results) {
+                if (err) {
+                    return res.status(500).json({ error: 'Hiba történt az esemény törlése közben.' });
+                }
+                return res.status(200).json({ message: 'Esemény sikeresen törölve.' });
+            });
+        }
     });
 });
+
 
 router.put('/:id', auth.authenticateToken, (req, res) => {
     const { id } = req.params;
