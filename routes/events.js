@@ -46,8 +46,10 @@ router.post('/', auth.authenticateToken, async (req, res) => {
     let posztId = null;
 
     if (posztcim) {
+        const datum = new Date();
+        const formattedDate = datum.toISOString().slice(0, 19).replace('T', ' ');
         const posztQuery = 'INSERT INTO uzenofal_posztok (bejegyzo_id, cim, szoveg, datum) VALUES (?, ?, ?, ?)';
-        const posztValues = [bejegyzo_id, posztcim, szoveg, formattedStartDate];
+        const posztValues = [bejegyzo_id, posztcim, szoveg, formattedDate];
 
         try {
             const [posztResult] = await con.promise().query(posztQuery, posztValues);
