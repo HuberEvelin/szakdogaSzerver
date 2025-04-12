@@ -16,14 +16,23 @@ router.get('/:id', auth.authenticateToken, (req, res) => {
 
 router.delete('/:id', auth.authenticateToken, (req, res) => {
     const id = req.params.id;
-
-    con.query('DELETE FROM megjegyzesek WHERE id = ?', [id], function (err, results) {
+    if (!id) {
+        return res.status(400).json({ error: 'Hiányzó id paraméter a megjegyzés törléséhez.' });
+    }
+    const query = 'DELETE FROM megjegyzesek WHERE id = ?';
+    con.query(query, [id], function (err, results) {
         if (err) {
+            console.error('SQL Hiba:', err);
             return res.status(500).json({ error: 'Hiba történt a megjegyzés törlése közben.' });
         }
-        return res.status(200);
+        if (results.affectedRows === 0) {
+            return res.status(404).json({ error: 'A megadott azonosítóval nem található megjegyzés.' });
+        }
+
+        return res.status(200).json({ message: 'Sikeres törlés.', results });
     });
 });
+
 
 router.post('/', auth.authenticateToken, (req, res) => {
     const { lako_id, szoveg, bejegyzo_id } = req.body;
