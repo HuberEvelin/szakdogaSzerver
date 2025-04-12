@@ -108,5 +108,33 @@ router.get('/:reszleg', auth.authenticateToken, (req, res) => {
     });
 });
 
+router.put('/', auth.authenticateToken, (req, res) => {
+    const { id, szobaszam, reszleg_id } = req.body;
+
+    if (id === -1) {
+        return res.status(400).json({ error: 'A -1 azonosítójú szoba részleg azonosítója nem módosítható.' });
+    }
+
+    if (!id || !szobaszam || !reszleg_id) {
+        return res.status(400).json({ error: 'Hiányzó adatok. Kérjük, adja meg a szobaszámot, részleg azonosítót és a szoba azonosítót.' });
+    }
+
+    const query = 'UPDATE szobak SET szobaszam = ?, reszleg_id = ? WHERE id = ?';
+    con.query(query, [szobaszam, reszleg_id, id], function (err, results) {
+        if (err) {
+            console.error('SQL Error:', err);
+            return res.status(500).json({ error: 'Hiba történt a szobák frissítése közben.' });
+        }
+
+        if (results.affectedRows === 0) {
+            return res.status(404).json({ error: 'A megadott azonosítóval nem található szoba.' });
+        }
+
+        return res.json({ message: 'A szoba frissítése sikeresen megtörtént.', results });
+    });
+});
+
+
+
 
 module.exports = router;
