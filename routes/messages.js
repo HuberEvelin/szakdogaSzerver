@@ -94,7 +94,7 @@ router.delete('/kommentek/:id', auth.authenticateToken, (req, res) => {
         if (err) {
             return res.status(500).json({ error: 'Hiba történt a komment törlése közben.' });
         }
-        return res.json(results);
+        return res.status(200).json({ message: 'Sikeres törlés.', results });
     });
 });
 
